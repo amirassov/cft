@@ -1,0 +1,13 @@
+dumps:
+  path: /home/amirassov/ml-ocr-passport/data/dumps
+  weights: weights
+  logs: logs
+
+data:
+  path: /home/amirassov/ml-ocr-passport/
+  src_train: tgt_blend.txt
+  tgt_train: src_blend.txt
+  src_test: tgt_issuing_authority_holdout.txt
+  tgt_test: src_issuing_authority_holdout.txt
+  tgt_synthetic: tgt_issuing_authority_synthetic.txt
+  src_synthetic: src_issuing_authority_synthetic.txt

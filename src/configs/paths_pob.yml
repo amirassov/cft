@@ -1,0 +1,12 @@
+dumps:
+  path: /home/amirassov/ml-ocr-passport/data/dumps
+  weights: weights
+  logs: logs
+
+data:
+  path: /home/amirassov/ml-ocr-passport/
+  src_train: src_place_of_birth.txt
+  tgt_train: tgt_place_of_birth.txt
+  src_test: src_place_of_birth_holdout.txt
+  tgt_test: tgt_place_of_birth_holdout.txt
+  pre_test: pre_place_of_birth_holdout.txt
