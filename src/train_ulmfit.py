@@ -48,7 +48,7 @@ class TranslationRunner(Runner):
             src_seqs=src_seqs,
             tgt_seqs=tgt_seqs,
             src_lens=src_lens,
-            teacher_forcing_ratio=0.5 if is_train else 0.0)
+            teacher_forcing_ratio=1.0 if is_train else 0.0)
 
         loss = self.loss(decoder_outputs[:max_tgt_len].transpose(0, 1).contiguous(), tgt_seqs)
 
@@ -70,8 +70,9 @@ def main():
     paths = get_config(args.paths)
     data_factory = TranslationFactory(config['data_params'], paths['data'], device=device)
 
-    config['train_params']['model_params']['src_vocab'] = data_factory.field.vocab
-    config['train_params']['model_params']['tgt_vocab'] = data_factory.field.vocab
+    config['train_params']['model_params']['vocabulary_size'] = len(data_factory.field.vocab)
+    config['train_params']['model_params']['pad_id'] = data_factory.field.vocab.pad_id
+    config['train_params']['model_params']['sos_id'] = data_factory.field.vocab.sos_id
     config['train_params']['loss_params']['pad_id'] = data_factory.field.vocab.pad_id
 
     factory = Factory(config['train_params'])

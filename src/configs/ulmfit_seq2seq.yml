@@ -1,0 +1,35 @@
+data_params:
+    batch_size: 256
+    num_workers: 16
+    max_seq_len: 100
+
+train_params:
+    name: true_ulmfit_seq2seq_transform
+    model: src.models.ulmfit.Seq2Seq
+    model_params:
+        hidden_size: 256
+        num_layers: 3
+        embedding_size: 128
+        bidirectional: True
+        use_attention: True
+        share_embeddings: True
+        tie_embeddings: True
+    loss: src.losses.BCELoss
+    loss_params:
+        reduction: elementwise_mean
+        pad_id:
+    steps_per_epoch: 1000
+    metrics: []
+
+stages:
+    -
+        optimizer: Adam
+        optimizer_params:
+            lr: 0.003
+        scheduler: ReduceLROnPlateau
+        scheduler_params:
+            mode: min
+            patience: 8
+            factor: 0.5
+        epochs: 200
+        teacher_forcing_ratio: 1.0

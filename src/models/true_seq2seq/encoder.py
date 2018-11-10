@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class EncoderRNN(nn.Module):
-    def __init__(self, embedding=None, rnn_type='LSTM', hidden_size=128,
+    def __init__(self, vocabulary_size, embedding_size, pad_id, rnn_type='LSTM', hidden_size=128,
                  num_layers=1, dropout=0.3, bidirectional=True):
         super(EncoderRNN, self).__init__()
 
@@ -12,13 +12,13 @@ class EncoderRNN(nn.Module):
         self.bidirectional = bidirectional
         self.num_directions = 2 if bidirectional else 1
         self.hidden_size = hidden_size // self.num_directions
+        self.embedding_size = embedding_size
 
-        self.embedding = embedding
-        self.word_vec_size = self.embedding.embedding_dim
+        self.embedding = nn.Embedding(vocabulary_size, embedding_size, padding_idx=pad_id)
 
         self.rnn_type = rnn_type
         self.rnn = getattr(nn, self.rnn_type)(
-            input_size=self.word_vec_size,
+            input_size=self.embedding_size,
             hidden_size=self.hidden_size,
             num_layers=self.num_layers,
             dropout=self.dropout,

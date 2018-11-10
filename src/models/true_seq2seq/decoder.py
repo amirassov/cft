@@ -3,11 +3,12 @@ import torch
 import torch.nn as nn
 
 from .attention import Attention
-from ..utils import detach_hidden
+from .utils import detach_hidden
 
 
 class DecoderRNN(nn.Module):
-    def __init__(self, encoder, sos_id, embedding=None, use_attention=True,
+    def __init__(self, vocabulary_size, embedding_size, pad_id, rnn_type, hidden_size, num_layers,
+                 sos_id, use_attention=True,
                  bias=True, tie_embeddings=False, dropout=0.3):
         """ General attention in `Effective Approaches to Attention-based Neural Machine Translation`
             Ref: https://arxiv.org/abs/1508.04025
@@ -23,19 +24,20 @@ class DecoderRNN(nn.Module):
         super().__init__()
 
         self.sos_id = sos_id
-        self.hidden_size = encoder.hidden_size * encoder.num_directions
-        self.num_layers = encoder.num_layers
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
         self.dropout = dropout
-        self.embedding = embedding
         self.use_attention = use_attention
         self.tie_embeddings = tie_embeddings
 
-        self.vocab_size = self.embedding.num_embeddings
-        self.word_vec_size = self.embedding.embedding_dim
+        self.vocabulary_size = vocabulary_size
+        self.embedding_size = embedding_size
+        self.rnn_type = rnn_type
 
-        self.rnn_type = encoder.rnn_type
+        self.embedding = nn.Embedding(vocabulary_size, embedding_size, padding_idx=pad_id)
+
         self.rnn = getattr(nn, self.rnn_type)(
-            input_size=self.word_vec_size,
+            input_size=self.embedding_size,
             hidden_size=self.hidden_size,
             num_layers=self.num_layers,
             dropout=self.dropout)
@@ -44,16 +46,16 @@ class DecoderRNN(nn.Module):
             self.attention = Attention(self.hidden_size, bias)
 
         if self.tie_embeddings:
-            self.W_p = nn.Linear(self.hidden_size, self.word_vec_size, bias=bias)
-            self.W_s = nn.Linear(self.word_vec_size, self.vocab_size, bias=bias)
+            self.W_p = nn.Linear(self.hidden_size, self.embedding_size, bias=bias)
+            self.W_s = nn.Linear(self.embedding_size, self.vocabulary_size, bias=bias)
             self.W_s.weight = self.embedding.weight
         else:
             self.W_s = nn.Linear(self.hidden_size, self.vocab_size, bias=bias)
 
-    def forward(self, tgt_seqs, decoder_hidden, encoder_outputs, attention_mask=None, teacher_forcing_ratio=1.0):
+    def forward(self, tgt_seqs, decoder_hidden, encoder_outputs, attention_mask, teacher_forcing_ratio):
         batch_size, max_tgt_len = tgt_seqs.size()
         use_teacher_forcing = True if random.random() < teacher_forcing_ratio else False
-        decoder_outputs = torch.zeros(max_tgt_len, batch_size, self.vocab_size, device=tgt_seqs.device)
+        decoder_outputs = torch.zeros(max_tgt_len, batch_size, self.vocabulary_size, device=tgt_seqs.device)
         input_seq = torch.tensor([self.sos_id] * batch_size, dtype=torch.long, device=tgt_seqs.device)
         for t in range(max_tgt_len):
             # decoder returns:

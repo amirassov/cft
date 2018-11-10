@@ -4,7 +4,7 @@ from pathlib import Path
 
 from youtrain.factory import Factory
 from youtrain.runner import Runner
-from youtrain.callbacks import ModelSaver, TensorBoard, Callbacks, Logger
+from youtrain.callbacks import TensorBoard, Callbacks, Logger, CheckpointSaver
 from youtrain.utils import set_global_seeds, get_config
 
 from src.data import TranslationFactory
@@ -25,17 +25,39 @@ def create_callbacks(name, dumps):
     save_dir = Path(dumps['path']) / dumps['weights'] / name
     callbacks = Callbacks([
         Logger(log_dir),
-        ModelSaver(
+        CheckpointSaver(
+            metric_name='loss',
             save_dir=save_dir,
-            save_every=1,
-            save_name=f"best.pt",
-            best_only=True,
-            checkpoint=False),
+            save_name="best_{epoch}_{metric}.pt",
+            num_checkpoints=6,
+            mode='min'),
         TensorBoard(log_dir)])
     return callbacks
 
 
 class TranslationRunner(Runner):
+    def __init__(self, factory, callbacks, stages, device, meta_data: dict = None):
+        super().__init__(factory, callbacks, stages, device, meta_data)
+        self.teacher_forcing_ratio = 1.0
+
+    def fit(self, data_factory):
+        self.callbacks.on_train_begin()
+        for stage in self.stages:
+            self.current_stage = stage
+
+            train_loader = data_factory.make_loader(stage, is_train=True)
+            val_loader = data_factory.make_loader(stage, is_train=False)
+
+            self.optimizer = self.factory.make_optimizer(self.model, stage)
+            self.scheduler = self.factory.make_scheduler(self.optimizer, stage)
+            self.teacher_forcing_ratio = stage['teacher_forcing_ratio']
+
+            self.callbacks.on_stage_begin()
+            self._run_one_stage(train_loader, val_loader)
+            self.callbacks.on_stage_end()
+
+        self.callbacks.on_train_end()
+
     def _make_step(self, data, is_train):
         report = {}
         src_seqs, src_lens = data.src
@@ -48,7 +70,7 @@ class TranslationRunner(Runner):
             src_seqs=src_seqs,
             tgt_seqs=tgt_seqs,
             src_lens=src_lens,
-            teacher_forcing_ratio=0.5 if is_train else 0.0)
+            teacher_forcing_ratio=self.teacher_forcing_ratio if is_train else 0.0)
 
         loss = self.loss(decoder_outputs[:max_tgt_len].transpose(0, 1).contiguous(), tgt_seqs)
 
@@ -70,8 +92,9 @@ def main():
     paths = get_config(args.paths)
     data_factory = TranslationFactory(config['data_params'], paths['data'], device=device)
 
-    config['train_params']['model_params']['src_vocab'] = data_factory.field.vocab
-    config['train_params']['model_params']['tgt_vocab'] = data_factory.field.vocab
+    config['train_params']['model_params']['vocabulary_size'] = len(data_factory.field.vocab)
+    config['train_params']['model_params']['pad_id'] = data_factory.field.vocab.pad_id
+    config['train_params']['model_params']['sos_id'] = data_factory.field.vocab.sos_id
     config['train_params']['loss_params']['pad_id'] = data_factory.field.vocab.pad_id
 
     factory = Factory(config['train_params'])
@@ -81,7 +104,10 @@ def main():
         stages=config['stages'],
         factory=factory,
         callbacks=callbacks,
-        device=device)
+        device=device,
+        meta_data={
+            'vocabulary': data_factory.field.vocab,
+            'config': config})
 
     runner.fit(data_factory)
 

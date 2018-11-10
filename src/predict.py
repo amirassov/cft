@@ -1,9 +1,9 @@
 import torch
 import argparse
 
-from src.lm.utils import translate
-from src.lm.data import TranslationFactory
-from src.youtrain.utils import get_config
+from src.utils import translate
+from src.data import TranslationFactory
+from youtrain.utils import get_config
 from pathlib import Path
 
 from tqdm import tqdm
@@ -37,6 +37,7 @@ def main():
         out_texts.append(out_text)
 
     print(f'ACCURACY: {sum(x == y for x, y in zip(out_texts, tgt_texts)) / len(tgt_texts)}')
+
     with open(Path(paths['data']['path']) / paths['data']['pre_test'], "w") as f:
         f.write('\n'.join(out_texts))
 

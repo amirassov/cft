@@ -4,8 +4,7 @@ from itertools import chain
 from torchtext.data import Field, Iterator, Dataset
 from torchtext.vocab import Vocab
 from torchtext.datasets import TranslationDataset
-
-from src.youtrain.factory import DataFactory
+from youtrain.factory import DataFactory
 
 
 class TranslationField(Field):
@@ -58,8 +57,10 @@ class TranslationFactory(DataFactory):
         super().__init__(params, paths, **kwargs)
         self.field = TranslationField()
         self.max_seq_len = self.params['max_seq_len']
-        self.train_dataset = self.make_dataset([self.paths['src_train'], self.paths['tgt_train']])
-        self.val_dataset = self.make_dataset([self.paths['src_test'], self.paths['tgt_test']])
+        self.train_dataset = self.make_dataset(
+            exts=[self.paths['src_train'], self.paths['tgt_train']])
+        self.val_dataset = self.make_dataset(
+            exts=[self.paths['src_test'], self.paths['tgt_test']])
         self.field.build_vocab(self.train_dataset, max_size=50000)
         self.device = kwargs['device']
 

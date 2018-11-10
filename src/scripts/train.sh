@@ -1,5 +1,5 @@
 #!/bin/bash
 
-PYTHONPATH=././../../../ml-ocr-passport/ CUDA_VISIBLE_DEVICES=0 python train.py \
-    --config=configs/train_ia.yml \
-    --paths=configs/paths_ia.yml
+PYTHONPATH=/home/amirassov/cft CUDA_VISIBLE_DEVICES=0 python ../train.py \
+    --config=../configs/teacher_forcing_seq2seq.yml \
+    --paths=../configs/paths.yml
