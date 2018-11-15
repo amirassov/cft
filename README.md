@@ -12,16 +12,16 @@ https://yadi.sk/i/U7LxiJ_D1SEBVQ).
 
 ## Как запустить:
 
-preprocessing:
- 
+* preprocessing:
 `eda.ipynb`
 
-train:
+* train:
 ```bash
 bash true_train.sh
-```
+``` 
+Обученные веса тут: https://yadi.sk/d/gAyzmX7G6-NVSQ
 
-inference:
+* inference:
 ```bash
-bash true_inference_val.sh
+bash true_inference.sh
 ```
