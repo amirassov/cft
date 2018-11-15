@@ -79,7 +79,7 @@ def translate(model, vocabulary, data, max_seq_len, device):
 
 
 symspell = symspellpy.SymSpell(max_dictionary_edit_distance=1)
-symspell.load_dictionary('/home/amirassov/cft/dictionary.txt', term_index=0, count_index=1)
+symspell.load_dictionary('/home/amirassov/cft/data/dictionary_aug_translit.txt', term_index=0, count_index=1)
 
 
 def correct(s):
